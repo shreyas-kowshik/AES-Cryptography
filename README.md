@@ -1,14 +1,13 @@
 TODO :
 
-1. Add IO
-
-2. Implement a block : SubBytes, ShiftRows, MixColumns, AddRoundKey and Inverses.
-3. KeyExpansion
-4. Join everything in a block : Encryption
-5. Test encryption
-6. Implement decryption
-7. Test decryption
-8. Test end to end
+~~1. Add IO~~
+~~2. Implement a block : SubBytes, ShiftRows, MixColumns, AddRoundKey and Inverses.~~
+~~3. KeyExpansion~~
+~~4. Join everything in a block : Encryption~~
+~~5. Test encryption~~
+~~6. Implement decryption~~
+~~7. Test decryption~~
+~~8. Test end to end~~
 9. Implement Fietsel Cipher
 10. Test Fietsel Cipher
 
