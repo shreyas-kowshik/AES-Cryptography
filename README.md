@@ -8,8 +8,10 @@ TODO :
 ~~6. Implement decryption~~
 ~~7. Test decryption~~
 ~~8. Test end to end~~
-9. Implement Fietsel Cipher
-10. Test Fietsel Cipher
+~~9. Implement Fietsel Cipher~~
+~~10. Test Fietsel Cipher~~
+
+Debug Combination
 
 
 References :
