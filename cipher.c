@@ -522,13 +522,19 @@ void fietsel_f(uint8_t *in, uint8_t *key) {
 }
 
 
-void encrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
+void encrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int verbose) {
     uint8_t** keys = keyScheduler(key, rounds);
 
     int round;
     int i;
 
     for(i=0;i<16;i++) out[i]=in[i]; // copy initial input to output
+
+    if(verbose) {
+        printf("Encryption : Start of Fietsel Cipher : Input : ");
+        print_as_hex_arr(out);
+        printf("\n");
+    }
 
     for(round=0;round<rounds;round++) {
         // fietsel cipher
@@ -544,14 +550,30 @@ void encrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
         for(i=8;i<16;i++) {
             out[i]=L[i-8]^R[i-8];
         }
+
+        if(verbose) {
+            printf("Encryption : Fietsel Cipher : round %d Key : ", round + 1);
+            print_as_hex_arr(keys[round]);
+            printf("\n");
+            printf("Encryption : Fietsel Cipher : round %d Output : ", round + 1);
+            print_as_hex_arr(out);
+            printf("\n");
+            printf("---\n");
+        }
     }
 }
 
-void decrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
+void decrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int verbose) {
     uint8_t** keys = keyScheduler(key, rounds);
     int round;
     int i;
     for(i=0;i<16;i++) out[i]=in[i]; // copy initial input to output
+
+    if(verbose) {
+        printf("Decryption : Start of Fietsel Cipher : Input : ");
+        print_as_hex_arr(out);
+        printf("\n");
+    }
 
     for(round=rounds-1;round>=0;round--) {
         // fietsel cipher
@@ -564,12 +586,22 @@ void decrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
         fietsel_f(L, keys[round]); // L is now updated to new values
         for(i=8;i<16;i++) out[i]=out[i-8];
         for(i=0;i<8;i++) out[i]=L[i]^R[i];
+
+        if(verbose) {
+            printf("Decryption : Fietsel Cipher : round %d Key : ", round + 1);
+            print_as_hex_arr(keys[round]);
+            printf("\n");
+            printf("Decryption : Fietsel Cipher : round %d Output : ", round + 1);
+            print_as_hex_arr(out);
+            printf("\n");
+            printf("---\n");
+        }
     }
 }
 /*************************************/
 
 /* Combined Encryption/Decryption */
-void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
+void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int verbose) {
     uint8_t** s=state_from_block(in);
     uint32_t w[44];
     keySchedule(key, w);
@@ -578,36 +610,59 @@ void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
     uint8_t** keyMat=roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]);
     AddRoundKey(s, keyMat);
 
+    if(verbose) {
+        printf("AES : After add round key round %d : ", round);
+        print_as_hex_state(s);
+        printf("\n");
+    }
+
     for(round=1;round<=5;round++) {
-        // printf("Encryption : Round %d Start : ", round);
-        // print_as_hex_state(s);
+        if(verbose) {
+            printf("\n---\n");
+            printf("AES Encryption : Round %d Start Output : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+            printf("AES Encryption : Round %d Key : ", round);
+            print_as_hex_word(w[4*(round)]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 1]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 2]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 3]);
+            printf("\n");
+        }
 
         
         SubBytes(s);
-        // printf("1\n");
-        // printf("After sub bytes %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Encryption : After sub bytes round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
 
         ShiftRows(s);
-        // printf("1\n");
-        // printf("After shift rows %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Encryption : After shift rows round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
 
         if(round < 10) {
             MixColumns(s);
-            // printf("1\n");
-            // printf("After mix columns %d\n", round);
-            // print_as_hex_state(s);
-            // printf("\n");
+            if(verbose) {
+                printf("AES Encryption : After mix columns round %d : ", round);
+                print_as_hex_state(s);
+                printf("\n");
+            }
         }
 
         AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
-        // printf("1\n");
-        // printf("After add round key %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Encryption : After add round key round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
     }
 
     for(int i=0;i<4;i++) {
@@ -618,43 +673,64 @@ void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
 
     uint8_t fietsel_out[16];
 
-    // printf("Encryption : Fietsel  Input : ");
-    // print_as_hex_arr(out);
-    encrypt_f(out, key, fietsel_out, rounds);
-    // printf("Encryption : Fietsel Output : ");
-    // print_as_hex_arr(fietsel_out);
+    printf("\n\n---Fietsel Cipher Block---\n");
+    printf("Encryption : Fietsel  Input : ");
+    print_as_hex_arr(out);
+    printf("\n");
+    encrypt_f(out, key, fietsel_out, rounds, verbose);
+    printf("Encryption : Fietsel Output : ");
+    print_as_hex_arr(fietsel_out);
+    printf("\n-----------\n\n\n");
 
     s=state_from_block(fietsel_out);
 
     for(round=6;round<=10;round++) {
-        // printf("Encryption : Round %d Start : ", round);
-        // print_as_hex_state(s);
+        if(verbose) {
+            printf("\n---\n");
+            printf("AES Encryption : Round %d Start Output : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+            printf("AES Encryption : Round %d Key : ", round);
+            print_as_hex_word(w[4*(round)]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 1]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 2]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 3]);
+            printf("\n");
+        }
 
+        
         SubBytes(s);
-        // printf("1\n");
-        // printf("After sub bytes %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Encryption : After sub bytes round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
 
         ShiftRows(s);
-        // printf("1\n");
-        // printf("After shift rows %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Encryption : After shift rows round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
 
         if(round < 10) {
             MixColumns(s);
-            // printf("1\n");
-            // printf("After mix columns %d\n", round);
-            // print_as_hex_state(s);
-            // printf("\n");
+            if(verbose) {
+                printf("AES Encryption : After mix columns round %d : ", round);
+                print_as_hex_state(s);
+                printf("\n");
+            }
         }
 
         AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
-        // printf("1\n");
-        // printf("After add round key %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Encryption : After add round key round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
     }
 
     for(int i=0;i<4;i++) {
@@ -666,7 +742,7 @@ void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
 
 }
 
-void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
+void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int verbose) {
     uint8_t** s=state_from_block(in);
     uint32_t w[44];
     keySchedule(key, w);
@@ -676,35 +752,51 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
     uint8_t** keyMat=roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]);
 
     for(round=10;round>=6;round--) {
-        // printf("Decryption : Round %d Start : ", round);
-        // print_as_hex_state(s);
+        if(verbose) {
+            printf("\n---\n");
+            printf("AES Decryption : Round %d Start Output : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+            printf("AES Decryption : Round %d Key : ", round);
+            print_as_hex_word(w[4*(round)]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 1]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 2]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 3]);
+            printf("\n");
+        }
 
         AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
+        if(verbose) {
+            printf("AES Decryption : After add round key round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
 
         if(round < 10) {
             InvMixColumns(s);
-            // printf("1\n");
-            // printf("After inv mix columns %d\n", round);
-            // print_as_hex_state(s);
-            // printf("\n");
+            if(verbose) {
+                printf("AES Decryption : After inverse mix columns round %d : ", round);
+                print_as_hex_state(s);
+                printf("\n");
+            }
         }
 
         InvShiftRows(s);
-        // printf("After inv shift rows %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Decryption : After inverse shift rows round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
 
         InvSubBytes(s);
-        // printf("After inv sub bytes : %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
-
-        // AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
-        // printf("1\n");
-        // printf("After add round key %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
-
+        if(verbose) {
+            printf("AES Decryption : After sub bytes round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
     }
 
     for(int i=0;i<4;i++) {
@@ -714,42 +806,71 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
     }
 
     uint8_t fietsel_out[16];
-    decrypt_f(out, key, fietsel_out, rounds);
+    printf("\n\n---Fietsel Cipher Block---\n");
+    printf("Decryption : Fietsel  Input : ");
+    print_as_hex_arr(out);
+    printf("\n");
+    decrypt_f(out, key, fietsel_out, rounds, verbose);
+    printf("Decryption : Fietsel Output : ");
+    print_as_hex_arr(fietsel_out);
+    printf("\n-----------\n\n\n");
 
     s=state_from_block(fietsel_out);
 
     for(round=5;round>=1;round--) {
-        // printf("Decryption : Round %d Start : ", round);
-        // print_as_hex_state(s);
+        if(verbose) {
+            printf("\n---\n");
+            printf("AES Decryption : Round %d Start Output : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+            printf("AES Decryption : Round %d Key : ", round);
+            print_as_hex_word(w[4*(round)]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 1]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 2]);
+            // printf(" ");
+            print_as_hex_word(w[4*(round) + 3]);
+            printf("\n");
+        }
 
         AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
+        if(verbose) {
+            printf("AES Decryption : After add round key round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
 
         if(round < 10) {
             InvMixColumns(s);
-            // printf("1\n");
-            // printf("After inv mix columns %d\n", round);
-            // print_as_hex_state(s);
-            // printf("\n");
+            if(verbose) {
+                printf("AES Decryption : After inverse mix columns round %d : ", round);
+                print_as_hex_state(s);
+                printf("\n");
+            }
         }
 
         InvShiftRows(s);
-        // printf("After inv shift rows %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Decryption : After inverse shift rows round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
 
         InvSubBytes(s);
-        // printf("After inv sub bytes : %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
-
-        // AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
-        // printf("1\n");
-        // printf("After add round key %d\n", round);
-        // print_as_hex_state(s);
-        // printf("\n");
+        if(verbose) {
+            printf("AES Decryption : After sub bytes round %d : ", round);
+            print_as_hex_state(s);
+            printf("\n");
+        }
     }
 
     AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
+    if(verbose) {
+        printf("AES Decryption : After add round key round %d : ", round);
+        print_as_hex_state(s);
+        printf("\n");
+    }
 
     for(int i=0;i<4;i++) {
         for(int j=0;j<4;j++) {
@@ -821,29 +942,34 @@ int main() {
 
     // for(i=0;i<16;i++) printf("%d ", in[i]);
     // printf("\n");
+    printf("Cipher Input : ");
     print_as_hex_arr(in);
 
     printf("\n---\n");
 
     // for(i=0;i<16;i++) printf("%d ", key[i]);
     // printf("\n");
+    printf("Key : ");
     print_as_hex_arr(key);
     printf("\n---\n");
 
     int rounds=5;
+    int verbose=1;
 
-    encrypt(in, key, out, rounds);
+    encrypt(in, key, out, rounds, verbose);
     printf("\n\n\n");
 
     // for(i=0;i<16;i++) printf("%d ", out[i]);
     // printf("\n");
+    printf("Cipher text : ");
     print_as_hex_arr(out);
     printf("\n---\n\n\n\n\n---\n");
 
     uint8_t decrypt_out[16];
-    decrypt(out, key, decrypt_out, rounds);
+    decrypt(out, key, decrypt_out, rounds, verbose);
 
     printf("\n\n\n");
+    printf("Decrypted plaintext from ciphertext : ");
     print_as_hex_arr(decrypt_out);
     printf("\n");
 
