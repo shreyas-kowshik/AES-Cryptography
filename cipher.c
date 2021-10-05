@@ -668,6 +668,10 @@ void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
     // printf("\n");
 
     for(round=1;round<=5;round++) {
+        // printf("Encryption : Round %d Start : ", round);
+        // print_as_hex_state(s);
+
+        
         SubBytes(s);
         // printf("1\n");
         // printf("After sub bytes %d\n", round);
@@ -702,11 +706,19 @@ void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
     }
 
     uint8_t fietsel_out[16];
+
+    // printf("Encryption : Fietsel  Input : ");
+    // print_as_hex_arr(out);
     encrypt_f(out, key, fietsel_out, rounds);
+    // printf("Encryption : Fietsel Output : ");
+    // print_as_hex_arr(fietsel_out);
 
     s=state_from_block(fietsel_out);
 
     for(round=6;round<=10;round++) {
+        // printf("Encryption : Round %d Start : ", round);
+        // print_as_hex_state(s);
+
         SubBytes(s);
         // printf("1\n");
         // printf("After sub bytes %d\n", round);
@@ -759,7 +771,19 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
     // printf("\n");
 
     for(round=10;round>=6;round--) {
+        // printf("Decryption : Round %d Start : ", round);
+        // print_as_hex_state(s);
+
         AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
+
+        if(round < 10) {
+            InvMixColumns(s);
+            // printf("1\n");
+            // printf("After inv mix columns %d\n", round);
+            // print_as_hex_state(s);
+            // printf("\n");
+        }
+
         InvShiftRows(s);
         // printf("After inv shift rows %d\n", round);
         // print_as_hex_state(s);
@@ -776,13 +800,6 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
         // print_as_hex_state(s);
         // printf("\n");
 
-        if(round < 10) {
-            InvMixColumns(s);
-            // printf("1\n");
-            // printf("After inv mix columns %d\n", round);
-            // print_as_hex_state(s);
-            // printf("\n");
-        }
     }
 
     for(int i=0;i<4;i++) {
@@ -794,8 +811,22 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
     uint8_t fietsel_out[16];
     decrypt_f(out, key, fietsel_out, rounds);
 
+    s=state_from_block(fietsel_out);
+
     for(round=5;round>=1;round--) {
+        // printf("Decryption : Round %d Start : ", round);
+        // print_as_hex_state(s);
+
         AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
+
+        if(round < 10) {
+            InvMixColumns(s);
+            // printf("1\n");
+            // printf("After inv mix columns %d\n", round);
+            // print_as_hex_state(s);
+            // printf("\n");
+        }
+
         InvShiftRows(s);
         // printf("After inv shift rows %d\n", round);
         // print_as_hex_state(s);
@@ -806,19 +837,11 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds) {
         // print_as_hex_state(s);
         // printf("\n");
 
-        
+        // AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
         // printf("1\n");
         // printf("After add round key %d\n", round);
         // print_as_hex_state(s);
         // printf("\n");
-
-        if(round < 10) {
-            InvMixColumns(s);
-            // printf("1\n");
-            // printf("After inv mix columns %d\n", round);
-            // print_as_hex_state(s);
-            // printf("\n");
-        }
     }
 
     AddRoundKey(s, roundKeyMat(w[round*4], w[round*4 + 1], w[round*4 + 2], w[round*4 + 3]));
@@ -966,16 +989,16 @@ int main() {
     // };
 
     uint8_t in[16] = {
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
+        0x01,
+        0x07,
+        0x05,
+        0x02,
+        0x09,
+        0x09,
+        0x02,
+        0x05,
+        0x07,
+        0x05,
         0x00,
         0x00,
         0x00,
@@ -1012,10 +1035,10 @@ int main() {
         0x00,
         0x00,
         0x00,
+        0x2a,
         0x00,
         0x00,
-        0x00,
-        0x00,
+        0x15,
         0x00
     };
 
@@ -1040,6 +1063,7 @@ int main() {
     int rounds=5;
 
     encrypt(in, key, out, rounds);
+    printf("\n\n\n");
 
     // for(i=0;i<16;i++) printf("%d ", out[i]);
     // printf("\n");
@@ -1049,6 +1073,7 @@ int main() {
     uint8_t decrypt_out[16];
     decrypt(out, key, decrypt_out, rounds);
 
+    printf("\n\n\n");
     print_as_hex_arr(decrypt_out);
     printf("\n");
 
