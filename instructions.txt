@@ -1,0 +1,18 @@
+17MA20039
+SHREYAS KOWSHIK
+
+Encryption :
+5 Rounds AES -> Fietsel Cipher (number of rounds is taken as input) -> 5 rounds AES
+
+For documentation : Refer to code `cipher.c` comments.
+For understanding Fietsel cipher structure, see `Fietsel-Cipher.pdf`. 
+Details on S-box and permutation tables are in the code and are commented.
+
+Instructions To run :
+
+gcc cipher.c && ./a.out
+
+Enter the input ciphertext as 32 hexadecimal characters (all in small).
+Enter the cipherkey as 32 hexadecimal characters (all in small).
+Enter the number of rounds to use for the Fietsel Cipher.
+Enter if intermediate outputs of each round is to be printed.
