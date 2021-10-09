@@ -974,6 +974,8 @@ int main() {
     printf("Do you want to generate outputs for intermediate steps of envryption/decryption? (0:no,1:yes) : ");
     scanf("%d", &verbose);
 
+    /* Alternatively, one can also uncomment the below lines and manually enter the values */
+
     // uint8_t in[16] = {
     //     0x00,
     //     0x00,
@@ -991,22 +993,6 @@ int main() {
     //     0x00,
     //     0x00,
     //     0x00
-    //     // 0x00,
-    //     // 0x11,
-    //     // 0x22,
-    //     // 0x33,
-    //     // 0x44,
-    //     // 0x55,
-    //     // 0x66,
-    //     // 0x77,
-    //     // 0x88,
-    //     // 0x99,
-    //     // 0xAA,
-    //     // 0xBB,
-    //     // 0xCC,
-    //     // 0xDD,
-    //     // 0xEE,
-    //     // 0xFF
     // };
 
     // uint8_t key[16] = {
