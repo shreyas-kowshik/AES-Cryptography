@@ -8,10 +8,14 @@ Shreyas Kowshik
 #include <stdio.h>
 #include <stdlib.h>
 
-/* AES Code */
-typedef uint8_t state_arr[4][4];
-typedef uint8_t** state;
+/********************
+AES IMPLEMENTATION
+********************/
 
+typedef uint8_t state_arr[4][4]; // stores AES round state as a 2d array
+typedef uint8_t** state; // stores AES round state as a double pointer
+
+// AES S-Box
 const uint8_t sbox[256] = {
   //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
   0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -31,6 +35,7 @@ const uint8_t sbox[256] = {
   0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
   0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16 };
 
+// AES Inverse S-Box
 const uint8_t invsbox[256] = {
   0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
   0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
@@ -49,6 +54,7 @@ const uint8_t invsbox[256] = {
   0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
   0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d };
 
+// Matrix for GF(2^8) multiplication for MixColumns
 const uint8_t mixColMat[4][4] = {
     {0x02, 0x03, 0x01, 0x01},
     {0x01, 0x02, 0x03, 0x01},
@@ -56,6 +62,7 @@ const uint8_t mixColMat[4][4] = {
     {0x03, 0x01, 0x01, 0x02}
 };
 
+// Inverse Matrix for GF(2^8) multiplication for InverseMixColumns
 const uint8_t invMixColMat[4][4] = {
     {0x0e, 0x0b, 0x0d, 0x09},
     {0x09, 0x0e, 0x0b, 0x0d},
@@ -63,6 +70,7 @@ const uint8_t invMixColMat[4][4] = {
     {0x0b, 0x0d, 0x09, 0x0e}
 };
 
+// Round Constants for the 10 rounds for the round key generation
 const uint32_t Rcon[11] = {
     0x00000000, // dummy value
     0x01000000,
@@ -77,6 +85,7 @@ const uint32_t Rcon[11] = {
     0x36000000
 };
 
+/* Utility functions */
 void print_as_hex_arr(uint8_t a[16]) {
     int i;
     for(i=0;i<16;i++) {
@@ -126,7 +135,9 @@ void SubBytesCheckArrayChanged(state s) {
         }
     }
 }
+/***********************/
 
+/* AES functions for each round */
 void SubBytes(state s) {
     int i,j;
     for(i=0;i<4;i++)
@@ -250,14 +261,16 @@ void InvMixColumns(state s) {
     }
 }
 
+
 void AddRoundKey(state s, uint8_t** key) {
     int i,j;
     for(i=0;i<4;i++)
         for(j=0;j<4;j++)
             s[i][j]=s[i][j]^key[i][j];
 }
+/*******************/
 
-/* Key Scheduling */
+/* AES Key Scheduling */
 uint32_t RotWord(uint32_t x) {
     return ((x>>24)^(x<<8));
 }
@@ -289,6 +302,7 @@ void keySchedule(uint8_t key[16], uint32_t w[44]) {
 }
 /**/
 
+// convert a 128-bit input to a 4x4 matrix for the state in AES processing
 uint8_t** state_from_block(uint8_t in[16]) {
     uint8_t** out;
     out = (uint8_t **) malloc(sizeof(uint8_t *)*4);
@@ -324,10 +338,15 @@ uint8_t** roundKeyMat(uint32_t w0, uint32_t w1, uint32_t w2, uint32_t w3) {
     return out;
 }
 /********************************/
+/********************
+AES IMPLEMENTATION ENDS
+********************/
 
 
 
-/* Fietsel Cipher Code */
+/********************
+FIETSEL CIPHER IMPLEMENTATION
+********************/
 const uint8_t fietsel_sbox[256] = {
   0x02, 0x09, 0x0a, 0x05, 0x00, 0x06, 0x05, 0x08, 0x0f, 0x00, 0x03, 0x0e, 0x01, 0x03, 0x07, 0x0b,
   0x0c, 0x03, 0x09, 0x02, 0x0b, 0x0f, 0x0f, 0x07, 0x04, 0x0e, 0x03, 0x04, 0x04, 0x0e, 0x09, 0x0b,
@@ -521,7 +540,7 @@ void fietsel_f(uint8_t *in, uint8_t *key) {
     permute(in);
 }
 
-
+// Encryption for Fietsel cipher sturcutre
 void encrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int verbose) {
     uint8_t** keys = keyScheduler(key, rounds);
 
@@ -563,6 +582,7 @@ void encrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int
     }
 }
 
+// Decryption for Fietsel cipher sturcutre
 void decrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int verbose) {
     uint8_t** keys = keyScheduler(key, rounds);
     int round;
@@ -599,9 +619,22 @@ void decrypt_f(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int
     }
 }
 /*************************************/
+/********************
+FIETSEL CIPHER IMPLEMENTATION ENDS
+********************/
+
+/********************
+ENCRYPTION/DECRYPTION FUNCTIONS COMBINING THE TWO
+********************/
 
 /* Combined Encryption/Decryption */
 void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int verbose) {
+    /*
+    5 rounds of AES
+    `rounds` rounds of Fietsel
+    5 rounds of AES
+    */
+
     uint8_t** s=state_from_block(in);
     uint32_t w[44];
     keySchedule(key, w);
@@ -671,6 +704,7 @@ void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int v
         }
     }
 
+    // Start Fietsel Encryption
     uint8_t fietsel_out[16];
 
     printf("\n\n---Fietsel Cipher Block---\n");
@@ -683,6 +717,7 @@ void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int v
     printf("\n-----------\n\n\n");
 
     s=state_from_block(fietsel_out);
+    // End Fietsel Encryption
 
     for(round=6;round<=10;round++) {
         if(verbose) {
@@ -743,6 +778,12 @@ void encrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int v
 }
 
 void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int verbose) {
+    /*
+    5 rounds of AES
+    `rounds` rounds of Fietsel
+    5 rounds of AES
+    */
+
     uint8_t** s=state_from_block(in);
     uint32_t w[44];
     keySchedule(key, w);
@@ -805,6 +846,7 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int v
         }
     }
 
+    // Start Fietsel Decryption
     uint8_t fietsel_out[16];
     printf("\n\n---Fietsel Cipher Block---\n");
     printf("Decryption : Fietsel  Input : ");
@@ -816,6 +858,7 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int v
     printf("\n-----------\n\n\n");
 
     s=state_from_block(fietsel_out);
+    // End Fietsel Decryption
 
     for(round=5;round>=1;round--) {
         if(verbose) {
@@ -881,62 +924,111 @@ void decrypt(uint8_t in[16], uint8_t key[16], uint8_t out[16], int rounds, int v
 }
 /*************************************/
 
+/* Utility function for input values */
+uint8_t char2hex(char c) {
+    if(c>='0'&&c<='9') return ((int)c)-48;
+    else return ((int)c)-87;
+}
 
 int main() {
-    uint8_t in[16] = {
-        0x01,
-        0x07,
-        0x05,
-        0x02,
-        0x09,
-        0x09,
-        0x02,
-        0x05,
-        0x07,
-        0x05,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00
-        // 0x00,
-        // 0x11,
-        // 0x22,
-        // 0x33,
-        // 0x44,
-        // 0x55,
-        // 0x66,
-        // 0x77,
-        // 0x88,
-        // 0x99,
-        // 0xAA,
-        // 0xBB,
-        // 0xCC,
-        // 0xDD,
-        // 0xEE,
-        // 0xFF
-    };
+    printf("\n---17MA20039 : AES+Fietsel Implementation---\n");
+    printf("Enter plaintext in following format as 32 hexadecimal characters (eg. 00000000000000000000000000000000) :\n");
+    printf("Enter Plaintext : ");
+    int idx;
+    char c;
 
-    uint8_t key[16] = {
-        0x01,
-        0x00,
-        0x07,
-        0x00,
-        0x09,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x2a,
-        0x00,
-        0x00,
-        0x15,
-        0x00
-    };
+    // Take input plaintext
+    uint8_t in[16];
+    for(idx=0;idx<32;idx++) {
+        scanf("%c", &c);
+        if(!((c>='0'&&c<='9') || (c>='a'&&c<='f'))) {
+            printf("\nInvalid hexadecimal character. Exiting...\n");
+            exit(1);
+        }
+        if(idx%2 == 0) in[idx/2]=char2hex(c);
+        else in[idx/2]=(in[idx/2]<<4)^(char2hex(c));
+    }
+    scanf("%c", &c);
 
+    printf("Enter cipherkey in following format as 32 hexadecimal characters (eg. 00000000000000000000000000000000) :\n");
+    printf("Enter Cipherkey : ");
+
+    // Take input cipherkey
+    uint8_t key[16];
+    for(idx=0;idx<32;idx++) {
+        scanf("%c", &c);
+        if(!((c>='0'&&c<='9') || (c>='a'&&c<='f'))) {
+            printf("\nInvalid hexadecimal character. Exiting...\n");
+            exit(1);
+        }
+        if(idx%2 == 0) key[idx/2]=char2hex(c);
+        else key[idx/2]=(key[idx/2]<<4)^(char2hex(c));
+    }
+    scanf("%c", &c);
+
+    int rounds=5;
+    int verbose=1;
+
+    printf("Enter number of Fietsel Rounds (eg. 5) : ");
+    scanf("%d", &rounds);
+    printf("Do you want to generate outputs for intermediate steps of envryption/decryption? (0:no,1:yes) : ");
+    scanf("%d", &verbose);
+
+    // uint8_t in[16] = {
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00
+    //     // 0x00,
+    //     // 0x11,
+    //     // 0x22,
+    //     // 0x33,
+    //     // 0x44,
+    //     // 0x55,
+    //     // 0x66,
+    //     // 0x77,
+    //     // 0x88,
+    //     // 0x99,
+    //     // 0xAA,
+    //     // 0xBB,
+    //     // 0xCC,
+    //     // 0xDD,
+    //     // 0xEE,
+    //     // 0xFF
+    // };
+
+    // uint8_t key[16] = {
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00,
+    //     0x00
+    // };
+
+    // Begin Encryption/Decryption
     uint8_t out[16];
     int i,j;
 
@@ -952,9 +1044,6 @@ int main() {
     printf("Key : ");
     print_as_hex_arr(key);
     printf("\n---\n");
-
-    int rounds=5;
-    int verbose=1;
 
     encrypt(in, key, out, rounds, verbose);
     printf("\n\n\n");
