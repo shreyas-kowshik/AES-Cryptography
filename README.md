@@ -6,7 +6,7 @@ gcc cipher.c && ./a.out
 
 ## Example Output
 
-![sample_output][Sample_Output.png]
+![sample_output](Sample_Output.png)
 
 
 ## References
